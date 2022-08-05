@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <title><%= htmlWebpackPlugin.options.title %></title>
   </head>
@@ -15,3 +15,19 @@
     <!-- built files will be auto injected -->
   </body>
 </html>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    padding:
+    constant(safe-area-inset-top)
+    constant(safe-area-inset-right)
+    constant(safe-area-inset-bottom)
+    constant(safe-area-inset-left); /* 兼容 iOS < 11.2 */
+    padding:
+    env(safe-area-inset-top)
+    env(safe-area-inset-right)
+    env(safe-area-inset-bottom)
+    env(safe-area-inset-left); /* 兼容 iOS >= 11.2 */
+  }
+</style>
