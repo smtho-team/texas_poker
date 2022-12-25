@@ -22,12 +22,16 @@
       <span>USDT {{ reqParams.amount }}</span>
     </div>
     <div @click="onWalletConnect" class="button">Pay Using BEP20 USDT</div>
+    <div v-show="showDialog" class="dialog">
+      <div @click="approve">1. 去授权</div>
+      <div @click="pay">2. 去支付</div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { routeType } from "../../types";
-import { ref } from "vue";
+import { ref, reactive } from "vue";
 import { onMounted } from "vue";
 import { useRoute } from "vue-router";
 import WalletConnectProvider from "@walletconnect/web3-provider";
@@ -37,6 +41,7 @@ const reqParams = ref<routeType>({
   amount: "",
 });
 onMounted(() => {
+  console.log(process.env);
   const Route = useRoute();
   reqParams.value.id = Route.query.id;
   reqParams.value.amount = Route.query.amount;
@@ -56,7 +61,6 @@ class mywalletConnect {
 }
 const walletConnect = new mywalletConnect(false, "", "");
 const walletConnector = new WalletConnectProvider({
-  networkId: 97,
   rpc: {
     97: "https://data-seed-prebsc-1-s1.binance.org:8545",
   },
@@ -64,16 +68,16 @@ const walletConnector = new WalletConnectProvider({
   qrcode: true,
 });
 const web3 = new Web3(walletConnector);
+let showDialog = reactive(false);
+let isFirst = true;
 const goBack = () => {
+  console.log(web3);
   if (window.unityContext) {
     window.unityContext.SendMessage("GameInitate", "goback");
   }
 };
-const pay = async () => {
-  var paymentContract = new web3.eth.Contract(
-    TexasPokerPayment.abi,
-    process.env.VUE_APP_PAYMENT
-  );
+const approve = () => {
+  // if (isFirst) {
   var usdtContract = new web3.eth.Contract(
     UsdtJson.abi,
     process.env.VUE_APP_USDT
@@ -82,7 +86,27 @@ const pay = async () => {
     .approve(process.env.VUE_APP_PAYMENT, reqParams.value.amount)
     .send({ from: walletConnect.account })
     .then((res: any) => {
-      console.log(res, "approve");
+      isFirst = false;
+    });
+  // }
+};
+const pay = async () => {
+  console.log(walletConnector)
+  // walletConnector.updateSession({chainId: 56});
+  // if (!isFirst) {
+  var usdtContract = new web3.eth.Contract(
+    UsdtJson.abi,
+    process.env.VUE_APP_USDT
+  );
+  var paymentContract = new web3.eth.Contract(
+    TexasPokerPayment.abi,
+    process.env.VUE_APP_PAYMENT
+  );
+  usdtContract.methods
+    .approve(process.env.VUE_APP_PAYMENT, reqParams.value.amount)
+    .send({ from: walletConnect.account })
+    .then((res: any) => {
+      isFirst = false;
       paymentContract.methods
         .topUp(
           reqParams.value.id,
@@ -92,89 +116,87 @@ const pay = async () => {
         .send({ from: walletConnect.account })
         .then((res: any) => {
           console.log(res, "topup");
-          if(window.unityContext) {
-            window.unityContext.SendMessage("GameInitate", "gohome");
-          }
+          // if (window.unityContext) {
+          //   window.unityContext.SendMessage("GameInitate", "gohome");
+          // }
         })
         .catch((err: any) => {
           console.log(err, "err");
         });
-    })
-    .catch((err: any) => {
-      console.log(err, "err1");
     });
+
+  // }
 };
 const connectTool = async () => {
   //  Get Chain Id
-  // walletConnector
-  //   .enable()
-  //   .then((res: any) => {
-  //     walletConnect.account = res[0];
-  //     walletConnect.connected = true;
-  //     pay();
-  //   })
-  //   .catch((err) => {
-  //     console.log(err, "链接出错");
-  //     walletConnect.connected = false;
-  //   });
-  const chainId = await web3.eth.getChainId();
-  let isProd = process.env.NODE_ENV == "production" ? true : false;
-  console.log(chainId, isProd);
-  if ((isProd && chainId == 1) || (!isProd && chainId == 97)) {
-    walletConnector
-      .enable()
-      .then((res: any) => {
-        walletConnect.account = res[0];
-        walletConnect.connected = true;
-        pay();
-      })
-      .catch((err) => {
-        console.log(err, "链接出错");
-        walletConnect.connected = false;
-      });
-  } else {
-    walletConnector
-      .request({
-        method: "wallet_switchEthereumChain",
-        params: [
-          {
-            chainId: isProd ? "1" : "97",
-          },
-        ],
-      })
-      .then(() => {
-        walletConnector
-          .enable()
-          .then((res: any) => {
-            walletConnect.account = res[0];
-            walletConnect.connected = true;
-            pay();
-          })
-          .catch((err) => {
-            console.log(err, "链接出错");
-            walletConnect.connected = false;
-          });
-      })
-      .catch((error) => {
-        if (error.code == "4902" && !isProd) {
-          walletConnector
-            .request({
-              method: "wallet_addEthereumChain",
-              params: [
-                {
-                  chainId: "97",
-                  chainName: "Binance Smart Chain Testnet",
-                  rpcUrls: ["https://data-seed-prebsc-1-s1.binance.org:8545"],
-                  blockExplorerUrls: ["https://testnet.bscscan.com"],
-                },
-              ],
-            })
-            .then((res) => {
-              connectTool();
-            });
-        }
-      });
-  }
+  walletConnector
+    .enable()
+    .then((res: any) => {
+      walletConnect.account = res[0];
+      walletConnect.connected = true;
+      pay();
+    })
+    .catch((err) => {
+      console.log(err, "链接出错");
+      walletConnect.connected = false;
+    });
+
+  // let chainId = await web3.eth.getChainId();
+  // let chainId = 6;
+  // let isProd = process.env.NODE_ENV == "production" ? true : false;
+  // console.log(chainId, isProd);
+  // if ((isProd && chainId == 1) || (!isProd && chainId == 61)) {
+  //   walletConnector
+  //     .enable()
+  //     .then((res: any) => {
+  //       walletConnect.account = res[0];
+  //       walletConnect.connected = true;
+  //     })
+  //     .catch((err) => {
+  //       console.log(err, "链接出错");
+  //       walletConnect.connected = false;
+  //     });
+  // } else {
+  //   walletConnector.updateRpcUrl(61);
+  //   console.log(walletConnector)
+  //   walletConnector.send('wallet_switchEthereumChain', [
+  //         {
+  //           chainId: isProd ? "0x1" : "0x61",
+  //         }])
+  //     .then(() => {
+  //       console.log('切换网络')
+  //       walletConnector
+  //         .enable()
+  //         .then((res: any) => {
+  //           walletConnect.account = res[0];
+  //           walletConnect.connected = true;
+  //         })
+  //         .catch((err) => {
+  //           console.log(err, "链接出错");
+  //           walletConnect.connected = false;
+  //         });
+  //     })
+  //     .catch((error) => {
+  //       console.log('切换失败')
+  //       if (error.code == "4902" && !isProd) {
+  //         walletConnector
+  //           .request({
+  //             method: "wallet_addEthereumChain",
+  //             params: [
+  //               {
+  //                 chainId: "0x61",
+  //                 chainName: "Binance Smart Chain Testnet",
+  //                 rpcUrls: ["https://data-seed-prebsc-1-s1.binance.org:8545"],
+  //                 blockExplorerUrls: ["https://testnet.bscscan.com"],
+  //               },
+  //             ],
+  //           })
+  //           .then((res) => {
+  //             connectTool();
+  //           });
+  //       }
+  //     });
+  // }
 };
 const onWalletConnect = () => {
   // Create a connector
@@ -192,13 +214,14 @@ const onWalletConnect = () => {
     console.log("账户变更");
     if (error) {
       throw error;
+      walletConnector.updateRpcUrl(97);
     }
     const { accounts, chainId } = payload.params[0];
     walletConnect.account = accounts[0];
     walletConnect.chainId = chainId;
     console.log(walletConnect);
   });
-  walletConnector?.on("disconnect", (error: any) => {
+  walletConnector.on("disconnect", (error: any) => {
     if (error) {
       throw error;
     }
@@ -224,6 +247,7 @@ const onWalletConnect = () => {
   width: 100%;
   min-height: 100vh;
   background: #250b3d;
+  position: relative;
   .back {
     width: 35px;
     height: 44px;
@@ -317,5 +341,13 @@ const onWalletConnect = () => {
     color: #ffffff;
     text-align: center;
   }
+}
+.dialog {
+  width: 50%;
+  height: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>

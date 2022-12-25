@@ -1,13 +1,13 @@
 const { defineConfig } = require('@vue/cli-service')
 const webpack = require("webpack")
 module.exports = defineConfig({
-  transpileDependencies: true,
-  publicPath: process.env.BASE_URL,
+  // transpileDependencies: true,
   devServer: {
     // https: true
   },
   configureWebpack: {
     resolve: {
+      extensions: ['.ts'],
       alias: {
         stream: "stream-browserify",
         crypto: "crypto-browserify",
@@ -25,6 +25,10 @@ module.exports = defineConfig({
         process: 'process/browser', 
         Buffer: ['buffer', 'Buffer']
       })
-    ]
+    ],
+    externals: {
+      Web3: 'Web3',
+      SimplexNoise: 'simplex-noise'
+    }
   }
 })
