@@ -1,33 +1,79 @@
 <template>
-  <div v-show="step == 0" class="start">
+  <div style="perspective: 1000px" v-show="step == 0" class="start">
+    <bullet></bullet>
     <img class="icon" src="../assets/images/may_icon.png" alt="" />
     <img class="door" src="../assets/images/door.png" alt="" />
-    <!-- <img class="glow" src="../assets/images/glow.png" alt=""> -->
     <div class="glow"></div>
     <img class="avatar" src="../assets/images/avater.png" alt="" />
     <img class="bg" src="../assets/images/bg2.png" alt="" />
-    <img class="text1" src="../assets/images/text1.png" alt="" />
-    <img class="text2" src="../assets/images/text2.png" alt="" />
+    <div class="content">
+      <img class="text2" src="../assets/images/text2.png" alt="" />
+      <img class="text1" src="../assets/images/text1.png" alt="" />
+      <img class="line" src="../assets/images/line2.png" alt="" />
+      <div class="number">
+        <div>There are already</div>
+        <scroll-number></scroll-number>
+        <div>diamond-hands participating in the event!</div>
+      </div>
+    </div>
     <img
-      @click="step = 1"
+      @click="inputWallet"
       class="btn"
       src="../assets/images/start.png"
       alt=""
     />
-    <div class="music">
+    <!-- <div class="music">
       <img src="../assets/images/note.png" alt="" />
-    </div>
+    </div> -->
   </div>
   <div v-show="step == 1" class="wallet">
     <img class="bg" src="../assets/images/bg4.png" alt="" />
-    <img src="../assets/images/putAddress.png" alt="" />
-    <div class="input">
-      <input type="text" />
+    <div class="wallet_box">
+      <img class="address" src="../assets/images/Please.png" alt="" />
+      <div class="input">
+        <input
+          placeholder="Ethereum address only (0x...)"
+          v-model="address"
+          type="text"
+        />
+        <img
+          v-show="showAddress"
+          class="wrong"
+          src="../assets/images/wrong.png"
+          alt=""
+        />
+        <img
+          v-show="showTimeout"
+          class="wrong"
+          src="../assets/images/timeout.png"
+          alt=""
+        />
+      </div>
+      <img @click="load" class="ok" src="../assets/images/ok.png" alt="" />
+      <img class="partner" src="../assets/images/partners.png" alt="" />
+      <div class="icons">
+        <img
+          v-for="(item, index) in 10"
+          :key="index"
+          :src="
+            require('../assets/images/icon' +
+              Number(Number(index) + 1) +
+              '.png')
+          "
+          alt=""
+        />
+      </div>
     </div>
-    <img @click="load" class="ok" src="../assets/images/ok.png" alt="" />
   </div>
-  <div class="loading" id="canvas_container" v-show="step == 2"></div>
-  <page-one v-if="step == 3"></page-one>
+  <div class="loading" id="canvas_container" v-show="step == 2">
+    <div>Data support by NFTScan</div>
+  </div>
+  <page-one
+    :diamondHanded1="diamondHanded"
+    :paperhands1="paperhands"
+    :gainss1="gainss"
+    v-if="step == 3"
+  ></page-one>
 </template>
 <script>
 import * as THREE from "three";
@@ -35,6 +81,17 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { SphereGeometry } from "three/src/geometries/SphereGeometry";
 import { SimplexNoise } from "three/examples/jsm/math/SimplexNoise";
 import PageOne from "@/components/pageOne.vue";
+import BulletView from "@/components/BulletView.vue";
+import ScrollNumber from "@/components/ScrollNumber.vue";
+import {
+  getNumber,
+  addPeople,
+  getdiamondHanded,
+  getgainsss,
+  getpaperhands,
+} from "@/services/index";
+import Web3 from "web3";
+import { getCurrentInstance } from "vue";
 
 let renderer,
   scene,
@@ -50,35 +107,181 @@ let renderer,
 export default {
   data() {
     return {
+      one: 0,
+      two: 0,
+      three: 0,
+      four: 0,
+      five: 0,
+      six: 0,
       container: null,
-      step: 3,
+      step: 0,
+      web3: null,
+      address: null,
+      showAddress: false,
+      showTimeout: false,
+      diamondHanded: {
+        boughtNftVolume: 0, //现在持有的在2022年购买的NFT总购买价
+        holdNftVolume: 0, //上述NFT现在的价值
+        maxBoughtNftFloorPrice: 0, //购买的最高价的NFT现在的地板价
+        maxBoughtNftName: null, //购买的最高价的NFT的名称
+        maxBoughtNftHoldTime: 0, //购买的最高价的NFT的持有时间
+        maxBoughtNftPrice: 0, //"购买的最高价的NFT的购买价格",
+        maxBoughtNftCover: null,
+      },
+      paperhands: {
+        maxDifferenceNftSellPrice: 0, //售价低于现价最大的一个NFT的出售价格
+        maxDifferenceNftName: null, //售价低于现价最大的一个NFT的名称
+        maxDifferenceNftBoughtPrice: 0, //售价低于现价最大的一个NFT的购买价格
+        maxDifferenceNftFloorPrice: 0, //售价低于现价最大的一个NFT的地板价
+        priceDifferenceTotal: 0, //在2022年出售价格低于现在价格的NFT在2022年的价差总和的以太坊价格
+        maxDifferenceNftCover: null,
+      },
+      gainss: {
+        maxDifferenceNftSellPrice: 0, //"价格差最大的一个NFT的出售价格",
+        maxDifferenceNftName: null, //"价格差最大的一个NFT的名称",
+        maxDifferenceGrowthRate: 0, //"价格差最大的一个NFT的增长的百分比",
+        maxDifference: 0, //"价格差最大的一个NFT的价格差",
+        differenceCount: 0, //"2022售价高于购买价的NFT数",
+        allSellCount: 0, //"2022年所有售卖的NFT数",
+        maxDifferenceNftBoughtPrice: 0, //"价格差最大的一个NFT的购买价格",
+        maxDifferenceNftFloorPrice: 0, //"价格差最大的一个NFT的地板价",
+        priceDifferenceTotal: 0, //“在2022年出售的价格高于购买价格的NFT，在2022年的价差总和的以太坊价格”
+        maxDifferenceNftCover: null,
+      },
+      data: 0,
     };
   },
   components: {
     // eslint-disable-next-line vue/no-unused-components
     PageOne,
+    bullet: BulletView,
+    ScrollNumber,
   },
-  mounted() {},
-  methods: {
-    load() {
-      this.step = 2;
+  mounted() {
+    console.log(
+      document.body.clientWidth,
+      document.body.clientHeight,
+      document.body.scrollWidth,
+      document.body.scrollHeight,
+      window.screen.availHeight,
+      window.screen.availWidth,
+      window.screen.width,
+      window.screen.height,
+      "尺寸"
+    );
+    var dom = document.querySelector("input");
+    dom.onblur = () => {
+      document.body.removeEventListener("touchmove", this.stop, {
+        passive: false,
+      });
       this.$nextTick(() => {
+        document.querySelector(".wallet").style.height = "100%";
+        document.querySelector(".bg").style.height = "100% !important";
+        document.querySelector(".wallet").style.backgroundSize = "100% 100%";
+      });
+    };
+    dom.onfocus = () => {
+      document.body.addEventListener("touchmove", this.stop, {
+        passive: false,
+      }); // passive 参数不能省略，用来兼容ios和android
+    };
+    const instance = getCurrentInstance();
+    instance?.appContext.config.globalProperties.$amplitude
+      .getInstance()
+      .logEvent("H5_2-22_HOME_PAGE");
+    this.web3 = new Web3(Web3.givenProvider);
+  },
+  methods: {
+    stop(e) {
+      e.preventDefault(); // 阻止默认的处理方式(阻止下拉滑动的效果)
+    },
+    inputWallet() {
+      this.step = 1;
+      window.addEventListener("resize", () => {
+        if (window.orientation === 180 || window.orientation === 0) {
+          document.querySelector(".mask").style.display = "none";
+        }
+      });
+    },
+    load() {
+      var isAddress = this.web3.utils.isAddress(this.address);
+      this.$amplitude
+        .getInstance()
+        .logEvent("H5_2022_WALLET_ENTER", { address: this.address });
+      if (isAddress) {
+        localStorage.setItem("wallet", this.address);
+        addPeople()
+          .then((res) => {})
+          .catch(() => {
+            this.showTimeout = true;
+          });
+        this.showAddress = false;
+        this.step = 2;
         this.container = document.getElementById("canvas_container");
         /*     Resize     */
         window.addEventListener("resize", () => {
           clearTimeout(timeout_Debounce);
           timeout_Debounce = setTimeout(this.onWindowResize, 80);
         });
-        this.init();
-        this.animate();
-      });
+        this.$nextTick(() => {
+          this.init();
+          this.animate();
+          getdiamondHanded({ wallet: this.address })
+            .then((res) => {
+              if (res.code == 200) {
+                this.diamondHanded = res.data || this.diamondHanded;
+              } else {
+                this.showTimeout = true;
+                this.step = 1;
+              }
+            })
+            .catch(() => {
+              this.showTimeout = true;
+              this.step = 1;
+            });
+          getgainsss({ wallet: this.address })
+            .then((res) => {
+              if (res.code == 200) {
+                this.gainss = res.data || this.gainss;
+              } else {
+                this.showTimeout = true;
+                this.step = 1;
+              }
+            })
+            .catch(() => {
+              this.showTimeout = true;
+              this.step = 1;
+            });
+          getpaperhands({ wallet: this.address })
+            .then((res) => {
+              if (res.code == 200) {
+                this.paperhands = res.data || this.paperhands;
+              } else {
+                this.showTimeout = true;
+                this.step = 1;
+              }
+            })
+            .catch(() => {
+              this.showTimeout = true;
+              this.step = 1;
+            });
+        });
+      } else {
+        this.showAddress = true;
+      }
     },
     init() {
       scene = new THREE.Scene();
 
+      // camera = new THREE.PerspectiveCamera(
+      //   55,
+      //   window.innerWidth / window.innerHeight,
+      //   0.01,
+      //   1000
+      // );
       camera = new THREE.PerspectiveCamera(
         55,
-        window.innerWidth / window.innerHeight,
+        this.container.clientWidth / this.container.clientHeight,
         0.01,
         1000
       );
@@ -121,17 +324,15 @@ export default {
       const texture4 = loader.load("https://i.ibb.co/yWfKkHh/p4-avirap.png");
 
       /*  Nucleus  */
-      texturenucleus.anisotropy = 16;
+      // texturenucleus.anisotropy = 16;
       // let icosahedronGeometry = new THREE.IcosahedronGeometry(30, 10);
-      // let lambertMaterial = new THREE.MeshPhongMaterial({
-      //   map: texturenucleus,
-      // });
+      // let lambertMaterial = new THREE.MeshPhongMaterial({ map: texturenucleus });
       // nucleus = new THREE.Mesh(icosahedronGeometry, lambertMaterial);
       // scene.add(nucleus);
 
       /*    Sphere  Background   */
       textureSphereBg.anisotropy = 16;
-      let geometrySphereBg = new THREE.SphereBufferGeometry(50, 10, 10);
+      let geometrySphereBg = new THREE.SphereBufferGeometry(50, 40, 40);
       let materialSphereBg = new THREE.MeshBasicMaterial({
         side: THREE.BackSide,
         map: textureSphereBg,
@@ -142,10 +343,10 @@ export default {
       /*    Moving Stars   */
       let starsGeometry = new THREE.Geometry();
 
-      for (let i = 0; i < 20; i++) {
-        let particleStar = randomPointSphere(50);
+      for (let i = 0; i < 50; i++) {
+        let particleStar = randomPointSphere(150);
 
-        particleStar.velocity = THREE.MathUtils.randInt(25, 100);
+        particleStar.velocity = THREE.MathUtils.randInt(50, 200);
 
         particleStar.startX = particleStar.x;
         particleStar.startY = particleStar.y;
@@ -175,13 +376,13 @@ export default {
         });
 
         for (let i = 0; i < total; i++) {
-          let radius = THREE.MathUtils.randInt(50, 20);
+          let radius = THREE.MathUtils.randInt(149, 70);
           let particles = randomPointSphere(radius);
           pointGeometry.vertices.push(particles);
         }
         return new THREE.Points(pointGeometry, pointMaterial);
       }
-      scene.add(createStars(texture1, 5, 10));
+      scene.add(createStars(texture1, 15, 20));
       scene.add(createStars(texture2, 5, 5));
       scene.add(createStars(texture4, 7, 5));
 
@@ -243,7 +444,7 @@ export default {
       requestAnimationFrame(this.animate);
       setTimeout(() => {
         this.step = 3;
-      }, 3000);
+      }, 5000);
     },
     onWindowResize() {
       camera.aspect = this.container.clientWidth / this.container.clientHeight;
@@ -254,6 +455,22 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+@media (min-aspect-ratio: 375/710) {
+  .content {
+    transform: scale(0.8);
+    top: 32% !important;
+  }
+  .wallet_box {
+    top: 15% !important;
+  }
+  .door,
+  .glow {
+    top: 50px !important;
+  }
+  .avatar {
+    top: 110px !important;
+  }
+}
 @keyframes glows {
   0% {
     opacity: 0.5;
@@ -265,33 +482,74 @@ export default {
     opacity: 1;
   }
 }
+@keyframes wrapper-gradient {
+  0% {
+    transform: translateY(-50%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 0, -100px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
 .bg {
   width: 100%;
-  height: 813px;
+  height: 100%;
   position: absolute;
   top: 0;
   left: 0;
 }
+#canvas_container {
+  position: relative;
+  div {
+    font-family: "Lato";
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 17px;
+    /* identical to box height */
+
+    text-align: center;
+
+    color: #ffffff;
+    width: 100%;
+    text-align: center;
+    position: absolute;
+    bottom: 100px;
+    left: 0px;
+  }
+}
 .start {
   width: 100%;
-  height: 813px;
+  height: 100%;
   background: url("../assets/images/bg1.png");
   background-position: left top;
   background-repeat: no-repeat;
   background-size: 100% 100%;
   position: relative;
+  overflow: hidden;
   .icon {
     position: absolute;
-    top: 30px;
+    top: 17px;
     left: 21px;
     width: 120px;
   }
   .avatar {
     width: 100%;
-    height: 527px;
     position: absolute;
-    top: 143px;
+    top: 130px;
     left: 0;
+    animation: fadeIn 2s linear;
   }
   .music {
     width: 34px;
@@ -304,40 +562,91 @@ export default {
     top: 33px;
     right: 22px;
   }
-  .text1 {
-    width: 362px;
-    height: 204px;
+  .content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     position: absolute;
-    top: 330px;
-    left: 0;
-    margin-left: 7px;
-  }
-  .text2 {
-    width: 303px;
-    height: 34px;
-    position: absolute;
-    top: 537px;
-    left: 37px;
+    top: 295px;
+    .text1 {
+      width: 362px;
+      height: 177px;
+      animation: wrapper-gradient 1s linear;
+    }
+    .text2 {
+      width: 303px;
+      height: 34px;
+      animation: wrapper-gradient 1s linear;
+    }
+    .line {
+      width: 338px;
+      height: 8px;
+      margin-top: 10px;
+    }
+    .number {
+      width: 100%;
+      height: 105px;
+      font-family: "Lato";
+      font-style: normal;
+      font-weight: 400;
+      font-size: 14px;
+      line-height: 30px;
+      /* or 214% */
+
+      text-align: center;
+      letter-spacing: 0.1em;
+
+      color: #ffffff;
+      div:nth-child(2) {
+        display: flex;
+        justify-content: center;
+        span {
+          display: block;
+          width: 28px;
+          height: 31px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.044) 0%,
+            rgba(240, 240, 240, 0.096) 50%,
+            rgba(255, 255, 255, 0.04375) 100%
+          );
+          backdrop-filter: blur(15px);
+          // filter: blur(2px);
+          border-right: 1px solid rgba($color: #fff, $alpha: 0.2);
+          &:nth-child(4) {
+            background: none;
+            backdrop-filter: none;
+          }
+          &:nth-child(3),
+          &:nth-child(7),
+          &:nth-child(4) {
+            border-right: none;
+          }
+        }
+      }
+    }
   }
   .btn {
     width: 115px;
     height: 92px;
     position: absolute;
     bottom: 0;
-    left: 148px;
+    left: 50%;
+    margin-left: -57.5px;
   }
   .door {
     width: 260.87px;
     height: 531.56px;
     position: absolute;
-    top: 104px;
+    top: 70px;
     left: 57px;
   }
   .glow {
     width: 261.87px;
     height: 531.56px;
     position: absolute;
-    top: 103px;
+    top: 70px;
     left: 56px;
     background: url("../assets/images/glow.png") no-repeat;
     background-size: 100% 100%;
@@ -346,48 +655,91 @@ export default {
 }
 .wallet {
   width: 100%;
-  height: 813px;
+  height: 100%;
   background: url("../assets/images/bg3.jpg") no-repeat;
   background-size: 100% 100%;
-  img:nth-child(2) {
-    width: 335px;
-    height: 58px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  .bg {
+    height: 100%;
+  }
+  .wallet_box {
+    width: 100%;
     position: absolute;
-    top: 249px;
-    left: 20px;
+    top: 25%;
+    // left: 50%;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .address {
+    width: 249px;
+    height: 58px;
   }
   .input {
     width: 335px;
-    height: 40px;
-    padding-left: 2%;
-    position: absolute;
-    top: 343px;
-    left: 20px;
-    background: url("../assets/images/input.png") no-repeat;
-    background-size: 100% 100%;
-    position: relative;
+    margin-top: 35px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     input {
-      width: 98%;
-      height: 100%;
+      width: 100%;
+      height: 40px;
+      background: url("../assets/images/input.png") no-repeat;
+      background-size: 100% 100%;
       font-family: "Lato";
       font-style: normal;
       font-weight: 400;
-      font-size: 14px;
+      font-size: 12px;
       line-height: 17px;
       text-align: center;
-      text-transform: capitalize;
       color: #ffffff;
-      background: none;
       border: none;
       outline: none;
+      &::-webkit-input-placeholder {
+        //兼容WebKit browsers（Chrome的内核）
+        color: #fff;
+        opacity: 0.4;
+      }
+      &::-moz-placeholder {
+        //Mozilla Firefox 19+
+        color: #fff;
+        opacity: 0.4;
+      }
+      &::-ms-input-placeholder {
+        //Internet Explorer 10+
+        color: #fff;
+        opacity: 0.4;
+      }
+    }
+    .wrong {
+      width: 115px;
+      margin-top: 11px;
     }
   }
   .ok {
     width: 116px;
     height: 44px;
-    position: absolute;
-    top: 453px;
-    left: 130px;
+    margin-top: 43px;
+  }
+  .partner {
+    width: 335px;
+    margin-top: 50px;
+  }
+  .icons {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    padding-left: 36px;
+    box-sizing: border-box;
+    img {
+      width: 45px;
+      height: 45px;
+      margin-right: 20px;
+      margin-top: 20px;
+    }
   }
 }
 .loading {
