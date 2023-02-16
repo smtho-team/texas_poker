@@ -1,5 +1,5 @@
 <template>
-  <div style="perspective: 1000px" v-show="step == 0" class="start">
+  <div style="perspective: 1000px" v-if="step == 0" class="start">
     <bullet></bullet>
     <img class="icon" src="../assets/images/may_icon.png" alt="" />
     <img class="door" src="../assets/images/door.png" alt="" />
@@ -32,7 +32,7 @@
       <img class="address" src="../assets/images/Please.png" alt="" />
       <div class="input">
         <input
-          placeholder="Ethereum address only (0x...)"
+          placeholder="Ethereum address or ENS domain (0x ... /xxx.eth)"
           v-model="address"
           type="text"
         />
@@ -49,7 +49,11 @@
           alt=""
         />
       </div>
-      <img @click="load" class="ok" src="../assets/images/ok.png" alt="" />
+      
+      <div @click="load" class="ok">
+        <tip v-if="loading" class="load"></tip>
+        <div v-else>OK</div>
+      </div>
       <img class="partner" src="../assets/images/partners.png" alt="" />
       <div class="icons">
         <img
@@ -65,24 +69,20 @@
       </div>
     </div>
   </div>
-  <div class="loading" id="canvas_container" v-show="step == 2">
+  <!-- <div class="loading" id="canvas_container" v-show="step == 2">
     <div>Data support by NFTScan</div>
-  </div>
-  <page-one
-    :diamondHanded1="diamondHanded"
-    :paperhands1="paperhands"
-    :gainss1="gainss"
-    v-if="step == 3"
-  ></page-one>
+  </div> -->
+  <page-one v-if="step == 2"></page-one>
 </template>
 <script>
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { SphereGeometry } from "three/src/geometries/SphereGeometry";
 import { SimplexNoise } from "three/examples/jsm/math/SimplexNoise";
-import PageOne from "@/components/pageOne.vue";
+import PageOne from "@/components/pageOne2.vue";
 import BulletView from "@/components/BulletView.vue";
 import ScrollNumber from "@/components/ScrollNumber.vue";
+import TipView from "@/components/TipView.vue";
 import {
   getNumber,
   addPeople,
@@ -92,6 +92,9 @@ import {
 } from "@/services/index";
 import Web3 from "web3";
 import { getCurrentInstance } from "vue";
+import { ethers } from "ethers";
+import WalletConnectProvider from "@walletconnect/web3-provider";
+import { getPersonalOverview } from "@/services/index";
 
 let renderer,
   scene,
@@ -149,6 +152,7 @@ export default {
         maxDifferenceNftCover: null,
       },
       data: 0,
+      loading: false
     };
   },
   components: {
@@ -156,8 +160,9 @@ export default {
     PageOne,
     bullet: BulletView,
     ScrollNumber,
+    Tip: TipView,
   },
-  mounted() {
+  async mounted() {
     console.log(
       document.body.clientWidth,
       document.body.clientHeight,
@@ -169,6 +174,20 @@ export default {
       window.screen.height,
       "尺寸"
     );
+    // window
+    //   .matchMedia("(prefers-color-scheme: dark)")
+    //   .addEventListener("change", (event) => {
+    //     if (event.matches) {
+    //       //dark mode
+    //       const img = document.querySelectorAll("img");
+    //       console.log("夜间模式");
+    //       img.forEach(item=> {
+    //         item.style.filter = "invert(100%)";
+    //       })
+    //     } else {
+    //       //light mode
+    //     }
+    //   });
     var dom = document.querySelector("input");
     dom.onblur = () => {
       document.body.removeEventListener("touchmove", this.stop, {
@@ -186,9 +205,9 @@ export default {
       }); // passive 参数不能省略，用来兼容ios和android
     };
     const instance = getCurrentInstance();
-    instance?.appContext.config.globalProperties.$amplitude
-      .getInstance()
-      .logEvent("H5_2-22_HOME_PAGE");
+    // instance?.appContext.config.globalProperties.$amplitude
+    //   .getInstance()
+    //   .logEvent("H5_2-22_HOME_PAGE");
     this.web3 = new Web3(Web3.givenProvider);
   },
   methods: {
@@ -203,13 +222,37 @@ export default {
         }
       });
     },
-    load() {
-      var isAddress = this.web3.utils.isAddress(this.address);
-      this.$amplitude
-        .getInstance()
-        .logEvent("H5_2022_WALLET_ENTER", { address: this.address });
+    async load() {
+      this.loading = true;
+      if (window.ethereum) {
+        var provider = new ethers.providers.Web3Provider(window.ethereum);
+        var address = await provider.resolveName(this.address);
+        this.add(address);
+      } else {
+        getPersonalOverview({ wallet: this.address })
+          .then((res) => {
+            var address = true;
+            this.add(address);
+          })
+          .catch((err) => {
+            var address = false;
+            this.add(address);
+            console.log(err, "err");
+          });
+      }
+    },
+    add(address) {
+      this.loading = false;
+      console.log(address, "address");
+      var address1 = this.web3.utils.isAddress(this.address);
+      console.log(address, address1);
+      var isAddress = address || address1;
+      // this.$amplitude
+      //   .getInstance()
+      //   .logEvent("H5_2022_WALLET_ENTER", { address: this.address });
       if (isAddress) {
         localStorage.setItem("wallet", this.address);
+        console.log(this.address, "address1");
         addPeople()
           .then((res) => {})
           .catch(() => {
@@ -223,49 +266,10 @@ export default {
           clearTimeout(timeout_Debounce);
           timeout_Debounce = setTimeout(this.onWindowResize, 80);
         });
-        this.$nextTick(() => {
-          this.init();
-          this.animate();
-          getdiamondHanded({ wallet: this.address })
-            .then((res) => {
-              if (res.code == 200) {
-                this.diamondHanded = res.data || this.diamondHanded;
-              } else {
-                this.showTimeout = true;
-                this.step = 1;
-              }
-            })
-            .catch(() => {
-              this.showTimeout = true;
-              this.step = 1;
-            });
-          getgainsss({ wallet: this.address })
-            .then((res) => {
-              if (res.code == 200) {
-                this.gainss = res.data || this.gainss;
-              } else {
-                this.showTimeout = true;
-                this.step = 1;
-              }
-            })
-            .catch(() => {
-              this.showTimeout = true;
-              this.step = 1;
-            });
-          getpaperhands({ wallet: this.address })
-            .then((res) => {
-              if (res.code == 200) {
-                this.paperhands = res.data || this.paperhands;
-              } else {
-                this.showTimeout = true;
-                this.step = 1;
-              }
-            })
-            .catch(() => {
-              this.showTimeout = true;
-              this.step = 1;
-            });
-        });
+        // this.$nextTick(() => {
+        // this.init();
+        // this.animate();
+        // });
       } else {
         this.showAddress = true;
       }
@@ -446,11 +450,11 @@ export default {
         this.step = 3;
       }, 5000);
     },
-    onWindowResize() {
-      camera.aspect = this.container.clientWidth / this.container.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(this.container.clientWidth, this.container.clientHeight);
-    },
+    // onWindowResize() {
+    //   camera.aspect = this.container.clientWidth / this.container.clientHeight;
+    //   camera.updateProjectionMatrix();
+    //   renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    // },
   },
 };
 </script>
@@ -698,6 +702,8 @@ export default {
       color: #ffffff;
       border: none;
       outline: none;
+      padding: 0;
+      margin: 0;
       &::-webkit-input-placeholder {
         //兼容WebKit browsers（Chrome的内核）
         color: #fff;
@@ -722,7 +728,33 @@ export default {
   .ok {
     width: 116px;
     height: 44px;
+    text-align: center;
     margin-top: 43px;
+    background: linear-gradient(
+      92.34deg,
+      #ba4c52 25.16%,
+      #7f427c 61.63%,
+      #544f96 98.88%
+    );
+    backdrop-filter: blur(15px);
+    /* Note: backdrop-filter has minimal browser support */
+
+    border-radius: 500px;
+    font-family: "Lato";
+    font-style: normal;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 44px;
+    /* identical to box height */
+
+    text-align: center;
+
+    color: #ffffff;
+  }
+  .load {
+    width: 100%;
+    height: 100%;
+    line-height: 44px;
   }
   .partner {
     width: 335px;

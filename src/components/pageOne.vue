@@ -540,14 +540,14 @@ export default {
 .safe-content {
   height: 100%;
 }
-@media screen and (max-width: 750px) and (min-aspect-ratio: 375/603) {
+@media screen and (max-width: 750px) and (min-aspect-ratio: 375/700) {
   .scene {
     .safe-content {
-      transform: translateY(-10%) scale(0.9);
+      transform: translateY(-8%) scale(0.9);
     }
     .two {
       .woman {
-        transform: translate(-15%, 15%) scale(0.7);
+        transform: translate(-10%, 10%) scale(0.8);
       }
       .monkey {
         margin-bottom: 15px !important;
@@ -567,6 +567,9 @@ export default {
     .five {
       .face {
         transform: translateX(0.8) scale(0.85);
+      }
+      .text {
+        padding-top: 160px !important;
       }
     }
     // .one {
@@ -727,6 +730,8 @@ export default {
 
     .text {
       margin-left: 26px;
+      position: relative;
+      z-index: 2;
       div {
         &:first-child {
           margin-bottom: 20px;

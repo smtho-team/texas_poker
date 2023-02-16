@@ -14,7 +14,7 @@
   </div>
 </template>
 <script>
-import { defineComponent, ref, reactive, onMounted, watch } from "vue";
+import { defineComponent, ref, reactive, onMounted, watch, onBeforeUnmount } from "vue";
 import { addPeople } from "@/services/index";
 export default defineComponent({
   setup() {
@@ -44,18 +44,22 @@ export default defineComponent({
         number.value = num;
       }
     };
+    onBeforeUnmount(()=> {
+      clearInterval(timer.value);
+      timer.value = null;
+    })
     onMounted(() => {
       document.addEventListener("visibilitychange", function () {
         // 用户离开了当前页面
         if (document.visibilityState === "hidden") {
-          document.title = "页面不可见";
+          // document.title = "页面不可见";
           clearInterval(timer.value);
           timer.value = null;
         }
 
         // 用户打开或回到页面
         if (document.visibilityState === "visible") {
-          document.title = "页面可见";
+          // document.title = "页面可见";
           timer.value = setInterval(() => {
             formatNumber(Number(number.value) + 10);
             numberList.value = number.value.split("");
@@ -138,8 +142,11 @@ export default defineComponent({
 
 span {
   writing-mode: vertical-lr;
+  text-orientation: upright;
   -ms-text-orientation: upright;
   -webkit-text-orientation: upright;
+  -moz-text-orientation: upright;
+  -o-text-orientation: upright;
   letter-spacing: 10px;
   color: #fff;
   position: absolute;

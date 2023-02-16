@@ -112,9 +112,9 @@ export default {
   methods: {
     toCanvas() {
       const instance = getCurrentInstance();
-      instance?.appContext.config.globalProperties.$amplitude
-        .getInstance()
-        .logEvent("H5_2022_DOWNLOAD_POSTER_CLICK");
+      // instance?.appContext.config.globalProperties.$amplitude
+      //   .getInstance()
+      //   .logEvent("H5_2022_DOWNLOAD_POSTER_CLICK");
       var shellContainerRef = document.querySelector(".poster");
       // var qrcode = document.getElementsByClassName('qrcode')[0];
       // qrcode.style.display = "block";
@@ -148,7 +148,7 @@ export default {
       }).then((canvas) => {
         // 生成的ba64图片
         const base64Data = canvas.toDataURL("image/jpeg", 1);
-        console.log(base64Data, "图片地址");
+        // console.log(base64Data, "图片地址");
         this.savePic(base64Data);
       });
       this.$parent.showPaiticipate = true;
@@ -193,6 +193,7 @@ export default {
       var a = document.createElement("a");
       a.href = url;
       a.download = new Date().valueOf() + ".png";
+      console.log(a.download,'download')
       var e = document.createEvent("MouseEvents");
       e.initMouseEvent(
         "click",
@@ -212,7 +213,9 @@ export default {
         null
       );
       a.dispatchEvent(e);
-      URL.revokeObjectURL(url);
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 0);
     },
   },
   mounted() {

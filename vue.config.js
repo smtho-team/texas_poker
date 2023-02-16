@@ -18,6 +18,10 @@ module.exports = defineConfig({
         buffer: "buffer",
         os: "os-browserify/browser",
       },
+      fallback: {
+        zlib: require.resolve("browserify-zlib"),
+        path: require.resolve("path-browserify"),
+      }
     },
     plugins: [
       new webpack.ProvidePlugin({
@@ -27,7 +31,8 @@ module.exports = defineConfig({
     ],
     externals: {
       Web3: 'Web3',
-      SimplexNoise: 'simplex-noise'
+      SimplexNoise: 'simplex-noise',
+      // ethers: require('ethers')
     }
   },
   chainWebpack: (config) => {

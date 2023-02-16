@@ -20,6 +20,21 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      // "zlib":[
+      //   "./node_modules/browserify-zlib"
+      // ],
+      "zlib":[
+        "false"
+      ],
+      "stream":[
+        "./node_modules/stream-browserify"
+      ],
+      "https":[
+        "./node_modules/https-browserify"
+      ],
+      "http":[
+        "./node_modules/stream-http"
       ]
     },
     "lib": [

@@ -40,9 +40,9 @@ export default {
   methods: {
     participate() {
       const instance = getCurrentInstance();
-      instance?.appContext.config.globalProperties.$amplitude
-        .getInstance()
-        .logEvent("H5_2022_WIN_PRIZES_CLICK");
+      // instance?.appContext.config.globalProperties.$amplitude
+      //   .getInstance()
+      //   .logEvent("H5_2022_WIN_PRIZES_CLICK");
       this.isPremium = true;
       this.$forceUpdate();
       window.open("https://app.quest3.xyz/quest/721964913739629010");
@@ -64,7 +64,7 @@ export default {
     }
   }
   .btn {
-    bottom: 4% !important;
+    bottom: 7% !important;
   }
 }
 @keyframes scaleTo {
