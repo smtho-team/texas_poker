@@ -40,9 +40,11 @@ export default {
   methods: {
     participate() {
       const instance = getCurrentInstance();
-      // instance?.appContext.config.globalProperties.$amplitude
-      //   .getInstance()
-      //   .logEvent("H5_2022_WIN_PRIZES_CLICK");
+      if(instance) {
+        instance.appContext.config.globalProperties.$amplitude
+        .getInstance()
+        .logEvent("H5_2022_WIN_PRIZES_CLICK");
+      }
       this.isPremium = true;
       this.$forceUpdate();
       window.open("https://app.quest3.xyz/quest/721964913739629010");
@@ -116,7 +118,8 @@ export default {
   background-size: 100% 100%;
   position: absolute;
   top: 99px;
-  left: 17px;
+  left: 50%;
+  transform: translateX(-50%);
   img:first-child {
     width: 100%;
   }
@@ -134,7 +137,8 @@ export default {
   background-size: 100% 100%;
   position: absolute;
   top: 306px;
-  left: 17px;
+  left: 50%;
+  transform: translateX(-50%);
   .text {
     width: 276px;
     position: absolute;
@@ -183,7 +187,8 @@ export default {
   width: 165px;
   position: absolute;
   bottom: 72px;
-  left: 105px;
+  left: 50%;
+  transform: translateX(-50%);
   div {
     width: 100%;
     font-family: "Lato";

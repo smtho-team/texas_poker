@@ -141,8 +141,8 @@ export default {
   }
   .bg1 {
     width: 307.5px;
-    margin-top: -140px;
-    margin-left: 42px;
+    display: block;
+    margin: -140px auto 0;
   }
   .icon {
     width: 120px;
@@ -155,7 +155,8 @@ export default {
     height: 120px;
     position: absolute;
     top: 120px;
-    left: 30px;
+    left: 50%;
+    transform: translateX(-50%);
     background: linear-gradient(
       176.29deg,
       rgba(255, 255, 255, 0.22) -16.04%,
@@ -188,6 +189,8 @@ export default {
   }
   .link {
     margin-top: 167px;
+    position: relative;
+    z-index: 1;
     div {
       display: flex;
       flex-direction: column;
@@ -231,7 +234,8 @@ export default {
     width: 165px;
     position: absolute;
     bottom: 60px;
-    left: 105px;
+    left: 50%;
+    transform: translateX(-50%);
     div {
       width: 100%;
       font-family: "Lato";

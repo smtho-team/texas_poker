@@ -14,7 +14,14 @@
   </div>
 </template>
 <script>
-import { defineComponent, ref, reactive, onMounted, watch, onBeforeUnmount } from "vue";
+import {
+  defineComponent,
+  ref,
+  reactive,
+  onMounted,
+  watch,
+  onBeforeUnmount,
+} from "vue";
 import { addPeople } from "@/services/index";
 export default defineComponent({
   setup() {
@@ -22,7 +29,7 @@ export default defineComponent({
     const numberList = ref([]);
     const list1 = ref([]);
     const list2 = ref([]);
-    const numberItem = ref(null);
+    const numberItem = ref([]);
     const timer = ref(null);
     const animate = () => {
       setTimeout(() => {
@@ -44,10 +51,10 @@ export default defineComponent({
         number.value = num;
       }
     };
-    onBeforeUnmount(()=> {
+    onBeforeUnmount(() => {
       clearInterval(timer.value);
       timer.value = null;
-    })
+    });
     onMounted(() => {
       document.addEventListener("visibilitychange", function () {
         // 用户离开了当前页面
@@ -61,12 +68,15 @@ export default defineComponent({
         if (document.visibilityState === "visible") {
           // document.title = "页面可见";
           timer.value = setInterval(() => {
-            formatNumber(Number(number.value) + 10);
-            numberList.value = number.value.split("");
-            list1.value = numberList.value.slice(0, 3);
-            list2.value = numberList.value.slice(3, 6);
-            animate();
-          }, 2000);
+            addPeople().then((res) => {
+              number.value = res.data;
+              formatNumber(number.value);
+              numberList.value = number.value.split("");
+              list1.value = numberList.value.slice(0, 3);
+              list2.value = numberList.value.slice(3, 6);
+              animate();
+            });
+          }, 5000);
         }
       });
       addPeople()
@@ -91,7 +101,7 @@ export default defineComponent({
           list2.value = numberList.value.slice(3, 6);
           animate();
         });
-      }, 2000);
+      }, 5000);
     });
     return {
       numberList,
@@ -107,11 +117,11 @@ export default defineComponent({
 </script>
 <style lang="scss" scoped>
 .numbers {
-    .symbol {
-        width: 27px;
-        height: 30px;
-        background: none;
-    }
+  .symbol {
+    width: 27px;
+    height: 30px;
+    background: none;
+  }
   > div {
     display: flex;
     background: linear-gradient(

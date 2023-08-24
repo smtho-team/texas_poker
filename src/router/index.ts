@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory, RouteRecordRaw, createWebHashHistory } from 'vue-router'
 
 const routes: Array<RouteRecordRaw> = [
-  // {
-  //   path: '/',
-  //   name: 'home',
-  //   component: ()=>import('../views/HomeView.vue')
-  // },
+  {
+    path: '/home',
+    name: 'home',
+    component: ()=>import('../views/HomeView.vue')
+  },
   {
     path: '/',
     name: 'activity',
@@ -19,7 +19,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/poster',
     name: 'poster',
-    component: ()=>import('../views/PosterView.vue')
+    component: ()=>import('../views/PosterView1.vue')
   }
 ]
 

@@ -9,10 +9,14 @@
   <meta name="theme-color" content="#000">
   <!-- uc强制竖屏 -->
   <meta name="screen-orientation" content="portrait">
+  <meta name="color-scheme" content="only light">
   <!-- QQ强制竖屏 -->
   <meta name="x5-orientation" content="portrait">
+  <meta name="nightmode" content="disable"/>
   <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="<%= BASE_URL %>favicon.ico" /> 
   <style>
+
     @supports(bottom: env(safe-area-inset-bottom)) {
       #app {
         padding-bottom: constant(safe-area-inset-bottom);
@@ -60,24 +64,51 @@
 
     @media only screen and (min-width: 750px) {
       body {
-        width: 500px;
+        width: 460px;
         margin: auto !important;
       }
 
       html {
-        font-size: 50px !important;
+        font-size: 46px !important;
         background: #000;
       }
     }
-    @media only screen and (max-height: 800px) {
+
+    @media only screen and (min-width: 750px) and (max-height: 800px) {
       html {
         font-size: 40.4px !important;
       }
+
+      /* .icons img {
+        margin-right: 40px !important;
+      } */
     }
+    @media only screen and (min-width: 750px) and (max-height: 700px) {
+      html {
+        font-size: 35.4px !important;
+      }
+
+      /* .icons img {
+        margin-right: 40px !important;
+      } */
+    }
+
+    :root {
+      color-scheme: only light;
+    }
+    img,body {
+      color-scheme: only light;
+    }
+
+    /* @media (prefers-color-scheme: dark) {
+      div {
+        color: #000;
+      }
+    } */
   </style>
 </head>
 
-<body>
+<body data-weui-theme="light">
   <div id="app"></div>
   <div class="mask">
     请竖屏或增大屏幕显示区域后查看
@@ -145,4 +176,25 @@
       // orientation = 'portrait';
     }
   }, false);
+  let listeners = {
+    dark: (mediaQueryList) => {
+      if (mediaQueryList.matches) {
+        alert('您切换到深色模式了！')
+      }
+    },
+    light: (mediaQueryList) => {
+      if (mediaQueryList.matches) {
+        alert('您切换到浅色模式了！')
+      }
+    }
+  }
+
+  window.matchMedia('(prefers-color-scheme: dark)').addListener(listeners.dark)
+  window.matchMedia('(prefers-color-scheme: light)').addListener(listeners.light)
+  if (window.navigator.userAgent.includes('AndroidDarkMode')) {
+    alert('您切换到深色模式了！')
+    // Apply dark theme or set theme css variables to dark
+  }
+
+
 </script>

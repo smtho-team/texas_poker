@@ -20,7 +20,6 @@
   
   .spinner {
     animation: rotator $duration linear infinite;
-    margin-right: 12px;
   }
   
   @keyframes rotator {

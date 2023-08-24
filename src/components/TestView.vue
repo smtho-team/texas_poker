@@ -1,12 +1,9 @@
 <template>
   <div class="scene">
-    <loading v-if="!rank"></loading>
+    <loading v-show="!rank"></loading>
     <div v-if="rank" class="swiper-container swiper1">
       <div class="swiper-wrapper">
-        <div
-          v-if="JSON.stringify(personalOverview) != '{}'"
-          class="swiper-slide one"
-        >
+        <div class="swiper-slide one">
           <img class="bg" src="../assets/images/newimg1.png" alt="" />
           <div class="safe-content">
             <div class="address-box">
@@ -37,7 +34,7 @@
                   <CountTo
                     :start="0"
                     :end="personalOverview.holdNftVolume"
-                    :decimals="toDecimal(personalOverview.holdNftVolume)"
+                    :decimals="toDecimal(personalOverview.holdNftVolume||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />
@@ -47,7 +44,7 @@
                   <CountTo
                     :start="0"
                     :end="rank.total_value_rank_percentage"
-                    :decimals="toDecimal(rank.total_value_rank_percentage)"
+                    :decimals="toDecimal(rank.total_value_rank_percentage||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />%</span
@@ -60,7 +57,7 @@
                   <CountTo
                     :start="0"
                     :end="personalOverview.totalTxCount"
-                    :decimals="toDecimal(personalOverview.totalTxCount)"
+                    :decimals="toDecimal(personalOverview.totalTxCount||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />
@@ -70,11 +67,12 @@
                   <CountTo
                     :start="0"
                     :end="rank.trade_count_rank_percentage"
-                    :decimals="toDecimal(rank.trade_count_rank_percentage)"
+                    :decimals="toDecimal(rank.trade_count_rank_percentage||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />%</span
                 >
+                of participants
               </p>
               <p v-if="!personalOverview.holdNftCount">
                 You seem to be particularly quiet this year
@@ -83,33 +81,28 @@
           </div>
           <img class="touch" src="../assets/images/swipeUp.png" alt="" />
         </div>
-        <div
-          v-if="JSON.stringify(personalDetails) != '{}'"
-          class="swiper-slide two"
-        >
+        <div class="swiper-slide two">
           <img class="bg" src="../assets/images/newimg2.png" alt="" />
           <div class="safe-content">
             <div class="top">
               <p>In 2022,</p>
               <p>
                 you've bought
-                <span>
+                <span v-show="getActive('two')">
                   <CountTo
-                    v-show="getActive('two')"
                     :start="0"
-                    :end="personalDetails.receiveNftCount"
-                    :decimals="toDecimal(personalDetails.receiveNftCount)"
+                    :end="personalDetails.receiveNftCount || 0"
+                    :decimals="toDecimal(personalDetails.receiveNftCount||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />
                 </span>
                 NFTs with a total cost of
-                <span>
+                <span v-if="getActive('two')">
                   <CountTo
-                    v-if="getActive('two')"
                     :start="0"
-                    :end="personalDetails.buyNftVolume"
-                    :decimals="toDecimal(personalDetails.buyNftVolume)"
+                    :end="personalDetails.buyNftVolume || 0"
+                    :decimals="toDecimal(personalDetails.buyNftVolume||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />
@@ -118,23 +111,21 @@
               </p>
               <p>
                 You've sold
-                <span>
+                <span v-if="getActive('two')">
                   <CountTo
-                    v-if="getActive('two')"
                     :start="0"
-                    :end="personalDetails.sellNftCount"
-                    :decimals="toDecimal(personalDetails.sellNftCount)"
+                    :end="personalDetails.sellNftCount || 0"
+                    :decimals="toDecimal(personalDetails.sellNftCount||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />
                 </span>
                 NFTs with a total profit of
-                <span>
+                <span v-if="getActive('two')">
                   <CountTo
-                    v-if="getActive('two')"
                     :start="0"
-                    :end="personalDetails.sellNftVolume"
-                    :decimals="toDecimal(personalDetails.sellNftVolume)"
+                    :end="personalDetails.sellNftVolume || 0"
+                    :decimals="toDecimal(personalDetails.sellNftVolume||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />
@@ -144,23 +135,21 @@
             </div>
             <div class="bottom">
               <p>
-                Out of these transactions,<span>
+                Out of these transactions,<span v-if="getActive('two')">
                   <CountTo
-                    v-if="getActive('two')"
                     :start="0"
-                    :end="personalDetails.nftIncreaseCount"
-                    :decimals="toDecimal(personalDetails.nftIncreaseCount)"
+                    :end="personalDetails.nftIncreaseCount || 0"
+                    :decimals="toDecimal(personalDetails.nftIncreaseCount||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />
                 </span>
                 were profitable,
-                <span>
+                <span v-if="getActive('two')">
                   <CountTo
-                    v-if="getActive('two')"
                     :start="0"
-                    :end="personalDetails.nftDecreaseCount"
-                    :decimals="toDecimal(personalDetails.nftDecreaseCount)"
+                    :end="personalDetails.nftDecreaseCount || 0"
+                    :decimals="toDecimal(personalDetails.nftDecreaseCount||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />
@@ -168,13 +157,16 @@
                 resulted in losses
               </p>
               <p>
-                Your total <span class="bold">{{personalDetails.proft>=0?'gain':'loss'}}</span> is
-                <span>
+                Your total
+                <span class="bold">{{
+                  personalDetails.proft >= 0 ? "gain" : "loss"
+                }}</span>
+                is
+                <span v-if="getActive('two')">
                   <CountTo
-                    v-if="getActive('two')"
                     :start="0"
-                    :end="Math.abs(personalDetails.proft)"
-                    :decimals="toDecimal(personalDetails.proft)"
+                    :end="Math.abs(personalDetails.proft||0)"
+                    :decimals="toDecimal(personalDetails.proft||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />
@@ -185,36 +177,31 @@
           </div>
           <img class="touch" src="../assets/images/swipeUp.png" alt="" />
         </div>
-        <div
-          v-if="JSON.stringify(personalDetails) != '{}'"
-          class="swiper-slide three"
-        >
+        <div class="swiper-slide three">
           <img class="bg" src="../assets/images/newimg3.png" alt="" />
           <div class="safe-content">
             <div class="top">
               <p>In 2022,</p>
               <p>
                 you've spent
-                <span>
+                <span v-if="getActive('three')">
                   <CountTo
-                    v-if="getActive('three')"
                     :start="0"
-                    :end="personalDetails.spentGas"
-                    :decimals="toDecimal(personalDetails.spentGas)"
+                    :end="personalDetails.spentGas || 0"
+                    :decimals="toDecimal(personalDetails.spentGas||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />
                 </span>
                 ETH in gas fee
               </p>
-              <p>
+              <p v-if="personalDetails.spentGas">
                 That is more gas spent than
-                <span>
+                <span v-if="getActive('three')">
                   <CountTo
-                    v-if="getActive('three')"
                     :start="0"
-                    :end="rank.gas_fee_rank_percentage"
-                    :decimals="toDecimal(rank.gas_fee_rank_percentage)"
+                    :end="rank.gas_fee_rank_percentage || 0"
+                    :decimals="toDecimal(rank.gas_fee_rank_percentage||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />%</span
@@ -239,12 +226,11 @@
               <p class="bold name">{{ longestHoldingPeriod.nftName }}</p>
               <p>
                 for
-                <span>
+                <span v-if="getActive('four')">
                   <CountTo
-                    v-if="getActive('four')"
                     :start="0"
                     :end="longestHoldingPeriod.holdingPeriod"
-                    :decimals="toDecimal(longestHoldingPeriod.holdingPeriod)"
+                    :decimals="toDecimal(longestHoldingPeriod.holdingPeriod||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />
@@ -285,7 +271,10 @@
           <img class="touch" src="../assets/images/swipeUp.png" alt="" />
         </div>
         <div
-          v-if="JSON.stringify(shortestHoldingPeriod) != '{}'&&shortestHoldingPeriod.holdingPeriod<43200"
+          v-if="
+            JSON.stringify(shortestHoldingPeriod) != '{}' &&
+            shortestHoldingPeriod.holdingPeriod < 43200
+          "
           class="swiper-slide five"
         >
           <div class="safe-content">
@@ -304,14 +293,11 @@
               </p>
               <p>
                 only
-                <span>
+                <span v-if="getActive('five')">
                   <CountTo
-                    v-if="getActive('five')"
                     :start="0"
                     :end="getDay(shortestHoldingPeriod.holdingPeriod)"
-                    :decimals="
-                      0
-                    "
+                    :decimals="0"
                     :autoPlay="true"
                     :duration="3000"
                   />
@@ -344,20 +330,16 @@
           </div>
           <img class="touch" src="../assets/images/swipeUp.png" alt="" />
         </div>
-        <div
-          v-if="JSON.stringify(holdBlueChip) != '{}'"
-          class="swiper-slide six"
-        >
+        <div class="swiper-slide six">
           <div class="safe-content">
             <div class="top">
               <p>
                 You are currently hodling
-                <span>
+                <span v-if="getActive('six')">
                   <CountTo
-                    v-if="getActive('six')"
                     :start="0"
-                    :end="holdBlueChip.blueChipNftCount"
-                    :decimals="toDecimal(holdBlueChip.blueChipNftCount)"
+                    :end="holdBlueChip.blueChipNftCount || 0"
+                    :decimals="toDecimal(holdBlueChip.blueChipNftCount||0)"
                     :autoPlay="true"
                     :duration="3000"
                   />
@@ -367,15 +349,14 @@
               <div v-if="holdBlueChip.blueChipNftCount">
                 <p>Out of these NFTs,</p>
                 <p class="bold name">{{ holdBlueChip.mostValuableBlueChip }}</p>
-                <p style="margin-bottom: 20px">
+                <p class="mb">
                   is the most valuable NFT that you are hodling right now, with
                   a floor price of
-                  <span>
+                  <span v-if="getActive('six')">
                     <CountTo
-                      v-if="getActive('six')"
                       :start="0"
                       :end="holdBlueChip.currentFloorPrice"
-                      :decimals="toDecimal(holdBlueChip.currentFloorPrice)"
+                      :decimals="toDecimal(holdBlueChip.currentFloorPrice||0)"
                       :autoPlay="true"
                       :duration="3000"
                     />
@@ -384,9 +365,8 @@
                 </p>
                 <p>
                   Your number of bluechip NFTs exceeds more than
-                  <span>
+                  <span v-if="getActive('six')">
                     <CountTo
-                      v-if="getActive('six')"
                       :start="0"
                       :end="99"
                       :decimals="0"
@@ -407,16 +387,16 @@
             <div class="swiper-container swiper2">
               <div class="swiper-wrapper">
                 <div
-                  v-for="(item, index) in 17"
+                  v-for="(item, index) in 10"
                   :key="index"
                   class="swiper-slide"
                 >
                   <div>
                     <img
                       :src="
-                        require('../assets/images/' +
+                        require('../assets/images/rabbit-compress/' +
                           Number(index + 1) +
-                          '.gif')
+                          '.webp')
                       "
                       alt=""
                     />
@@ -427,18 +407,14 @@
           </div>
           <img class="touch" src="../assets/images/swipeUp.png" alt="" />
         </div>
-        <div
-          v-if="JSON.stringify(priceToZero) != '{}'"
-          class="swiper-slide seven"
-        >
+        <div v-if="personalDetails.buyNftVolume > 0" class="swiper-slide seven">
           <div class="safe-content">
             <div class="top">
               <p>In 2022,</p>
               <p>
                 you've bought
-                <span>
+                <span v-if="getActive('seven')">
                   <CountTo
-                    v-if="getActive('seven')"
                     :start="0"
                     :end="priceToZero.zeroNftCount || 0"
                     :decimals="toDecimal(priceToZero.zeroNftCount || 0)"
@@ -453,12 +429,11 @@
                 <p class="bold name">{{ priceToZero.nftName }}</p>
                 <p>
                   at a cost of
-                  <span>
+                  <span v-if="getActive('seven')">
                     <CountTo
-                      v-if="getActive('seven')"
                       :start="0"
                       :end="priceToZero.purchasePrice"
-                      :decimals="toDecimal(priceToZero.purchasePrice)"
+                      :decimals="toDecimal(priceToZero.purchasePrice||0)"
                       :autoPlay="true"
                       :duration="3000"
                     />
@@ -471,23 +446,33 @@
               <div v-if="priceToZero.zeroNftCount">
                 <p>
                   The current floor price is
-                  <span>
+                  <span v-if="getActive('seven')">
                     <CountTo
-                      v-if="getActive('seven')"
                       :start="0"
                       :end="priceToZero.currentFloorPrice"
-                      :decimals="toDecimal(priceToZero.currentFloorPrice)"
+                      :decimals="toDecimal(priceToZero.currentFloorPrice||0)"
                       :autoPlay="true"
                       :duration="3000"
                     />
                   </span>
                   and that's
-                  <span>
+                  <span v-if="getActive('seven')">
                     <CountTo
-                      v-if="getActive('seven')"
                       :start="0"
-                      :end="priceToZero.proportion.substr(0,priceToZero.proportion.length-1)"
-                      :decimals="toDecimal(priceToZero.proportion.substr(0,priceToZero.proportion.length-1))"
+                      :end="
+                        Number(priceToZero.proportion.substr(
+                          0,
+                          priceToZero.proportion.length - 1
+                        ))
+                      "
+                      :decimals="
+                        toDecimal(
+                          priceToZero.proportion.substr(
+                            0,
+                            priceToZero.proportion.length - 1
+                          )
+                        )
+                      "
                       :autoPlay="true"
                       :duration="3000"
                     />%</span
@@ -525,19 +510,28 @@
               </div>
             </div>
           </div>
-          <img
-            @click="generate"
-            class="touch"
-            src="../assets/images/generate.png"
-            alt=""
-          />
-        </div>
-        <div v-if="showPoster" class="swiper-slide seven">
+          <div @click="generate" class="touch">
+            <tip v-if="loadingImg"></tip>
+            Generate Poster
+          </div>
           <PosterView
+            ref="ref_poster"
+            :hasOpacity="0"
+            style="position: absolute; top: 0; left: 0"
             :keyword="userLabel.label"
             :holdCount="personalOverview.holdNftCount"
             :worth="personalOverview.holdNftVolume"
             :tx="personalOverview.totalTxCount"
+          ></PosterView>
+        </div>
+        <div v-if="showPoster" class="swiper-slide seven">
+          <PosterView
+            :hasOpacity="1"
+            :keyword="userLabel.label"
+            :holdCount="personalOverview.holdNftCount"
+            :worth="personalOverview.holdNftVolume"
+            :tx="personalOverview.totalTxCount"
+            :baseData="baseData"
           ></PosterView>
         </div>
         <div v-if="showPaiticipate" class="swiper-slide eight">
@@ -550,10 +544,11 @@
     </div>
   </div>
 </template>
-    
-<script>
+      
+  <script>
 import { getCurrentInstance, reactive, onMounted, ref, computed } from "vue";
 import PosterView from "../views/PosterView1.vue";
+import Tip from "@/components/TipView.vue";
 import ParticipateView from "../views/ParticipateView.vue";
 import DownloadView from "@/components/DownloadView.vue";
 import Loading from "@/components/LoadingView.vue";
@@ -576,11 +571,12 @@ export default {
     participate: ParticipateView,
     download: DownloadView,
     Loading,
+    Tip,
   },
   props: ["gainss1", "diamondHanded1", "paperhands1"],
   setup(props) {
     const getTime = computed(() => (time) => {
-      console.log(time,'time')
+      console.log(time, "time");
       //获取当地时间，Fri Apr 01 2022 21:36:14 GMT+0800
       // var time = dateBJtoLocal(time).toLocaleString();
       var year = dateBJtoLocal(time).getFullYear();
@@ -589,8 +585,19 @@ export default {
       var hour = dateBJtoLocal(time).getHours();
       var minutes = dateBJtoLocal(time).getMinutes();
       var second = dateBJtoLocal(time).getSeconds();
-      var time = year+'/'+month+'/'+dates+' '+hour+':'+minutes+':'+second;
-      console.log(time,'time1');
+      var time =
+        year +
+        "/" +
+        month +
+        "/" +
+        dates +
+        " " +
+        hour +
+        ":" +
+        minutes +
+        ":" +
+        second;
+      console.log(time, "time1");
       var en_mon_arr = [
         "Jan",
         "Feb",
@@ -656,6 +663,9 @@ export default {
     const getActive = computed(() => (activeClass) => {
       return swipeIndex.value == activeClass;
     });
+    const baseData = ref();
+    const ref_poster = ref();
+    const loadingImg = ref(false);
     const showPaiticipate = ref(false);
     const showPoster = ref(false);
     const gainss = reactive(props.gainss1);
@@ -679,15 +689,14 @@ export default {
     const userLabel = ref({});
     const rank = ref();
     const generate = () => {
+      loadingImg.value = true;
+      ref_poster.value.toCanvas();
       const instance = getCurrentInstance();
-      // instance?.appContext.config.globalProperties.$amplitude
-      //   .getInstance()
-      //   .logEvent("H5_2022_GENERAL_POSTER_CLICK");
-      showPoster.value = true;
-      setTimeout(() => {
-        swipers.value.update();
-        swipers.value.slideNext();
-      }, 0);
+      if (instance) {
+        instance.appContext.config.globalProperties.$amplitude
+          .getInstance()
+          .logEvent("H5_2022_GENERAL_POSTER_CLICK");
+      }
     };
     const dateBJtoLocal = (time) => {
       // 当前时区与标准地区的差值(分钟)
@@ -717,39 +726,72 @@ export default {
       userLabel.value = (await getUserLabel({ wallet: address })).data || {};
       updateStatisticData({
         address: address,
-        gas_fee: personalDetails.value?.spentGas || 0,
-        total_value: personalOverview.value?.holdNftVolume || 0,
-        trade_count: personalOverview.value?.totalTxCoun || 0,
+        gas_fee: personalDetails.value.spentGas || 0,
+        total_value: personalOverview.value.holdNftVolume || 0,
+        trade_count: personalOverview.value.totalTxCoun || 0,
         key_word: userLabel.value.label,
       }).then((res) => {
-        rank.value = res.data;
-        nextTick(() => {
-          swipers.value = new Swiper(".swiper1", {
-            autoplay: false,
-            observeParents: true, // 修改swiper的父元素时，自动初始化swiper
-            on: {
-              slideChange: function () {
-                console.log(this.slides,this.activeIndex, "this.activeIndex");
-                nextTick(()=> {
-                  for(var i=0;i<this.slides.length;i++) {
-                  if(this.slides[i].className.search('swiper-slide-active')!=-1) {
-                    //返回当前active swiper的类名
-                   swipeIndex.value = this.slides[i].className.split(' ')[1];
-                  }
-                }
-                })
-              },
-            },
-            direction: "vertical",
+        let promiseAll = [];
+        let imgs = [
+          "bg_2.jpg",
+          "bg_3.jpg",
+          "bg8.jpg",
+          "bg_5.jpg",
+          "bg_6.jpg",
+          "bg28.png",
+          "bg29.png",
+        ];
+        for (var i = 0; i < imgs.length; i++) {
+          let img = new Image();
+          img.src = require("../assets/images/" + imgs[i]);
+          promiseAll[i] = new Promise((resolve, reject) => {
+            img.onload = function () {
+              //第i张加载完成
+              resolve(img);
+            };
           });
-          new Swiper(".swiper2", {
-            autoplay: {
-              delay: 1000,
-            },
-            slidesPerView: 3,
-            slidesPerGroup: 1,
-            loop: true,
-            spaceBetween: 20,
+        }
+        Promise.all(promiseAll).then((img) => {
+          console.log("全部加载完毕了");
+          //全部加载完成
+          rank.value = res.data;
+          nextTick(() => {
+            swipers.value = new Swiper(".swiper1", {
+              autoplay: false,
+              observeParents: true, // 修改swiper的父元素时，自动初始化swiper
+              on: {
+                slideChange: function () {
+                  console.log(
+                    this.slides,
+                    this.activeIndex,
+                    "this.activeIndex"
+                  );
+                  nextTick(() => {
+                    for (var i = 0; i < this.slides.length; i++) {
+                      if (
+                        this.slides[i].className.search(
+                          "swiper-slide-active"
+                        ) != -1
+                      ) {
+                        //返回当前active swiper的类名
+                        swipeIndex.value =
+                          this.slides[i].className.split(" ")[1];
+                      }
+                    }
+                  });
+                },
+              },
+              direction: "vertical",
+            });
+            new Swiper(".swiper2", {
+              autoplay: {
+                delay: 1000,
+              },
+              slidesPerView: 3,
+              slidesPerGroup: 1,
+              loop: true,
+              spaceBetween: 20,
+            });
           });
         });
       });
@@ -783,13 +825,16 @@ export default {
       rank,
       toDecimal,
       getActive,
+      ref_poster,
+      loadingImg,
+      baseData,
     };
   },
   computed: {},
 };
 </script>
-    
-  <style lang="scss" scoped>
+      
+    <style lang="scss" scoped>
 // img {
 //   pointer-events: none;
 // }
@@ -799,13 +844,28 @@ export default {
       font-size: 15px !important;
     }
     .top {
-      margin: 80px 30px 18px 20px !important;
+      margin: 80px 20px 18px 20px !important;
     }
+  }
+}
+@media only screen and (min-width: 750px) and (max-height: 700px) {
+  .swiper2 {
+    bottom: 50px !important;
+    .swiper-slide {
+      transform: scale(0.8);
+      margin-right: 20px !important;
+    }
+  }
+  .mb {
+    margin-bottom: 10px !important;
   }
 }
 p {
   margin: 0;
   padding: 0;
+}
+.mb {
+  margin-bottom: 20px;
 }
 .swiper2 {
   width: 100%;
@@ -949,7 +1009,7 @@ p {
   }
 
   .one {
-    background: url("../assets/images/bg_2.png") no-repeat;
+    background: url("../assets/images/bg_2.jpg") no-repeat;
     background-size: 100% 100%;
     padding-top: 69px;
     box-sizing: border-box;
@@ -978,7 +1038,7 @@ p {
         width: 84px;
         height: 84px;
         position: absolute;
-        right: -10px;
+        right: -20px;
         bottom: -30px;
       }
       div {
@@ -1019,7 +1079,7 @@ p {
   }
 
   .two {
-    background: url("../assets/images/bg_3.png") no-repeat;
+    background: url("../assets/images/bg_3.jpg") no-repeat;
     background-size: 100% 100%;
     padding: 98px 0 50px;
     box-sizing: border-box;
@@ -1057,7 +1117,7 @@ p {
   }
 
   .three {
-    background: url("../assets/images/bg8.png") no-repeat;
+    background: url("../assets/images/bg8.jpg") no-repeat;
     background-size: 100% 100%;
     padding: 141.53px 0 50px 0px;
     box-sizing: border-box;
@@ -1084,7 +1144,7 @@ p {
     }
   }
   .four {
-    background: url("../assets/images/bg8.png") no-repeat;
+    background: url("../assets/images/bg8.jpg") no-repeat;
     background-size: 100% 100%;
     // padding-top: 211px;
     box-sizing: border-box;
@@ -1250,7 +1310,7 @@ p {
   }
 
   .six {
-    background: url("../assets/images/bg_5.png") no-repeat;
+    background: url("../assets/images/bg_5.jpg") no-repeat;
     background-size: 100% 100%;
     box-sizing: border-box;
     position: relative;
@@ -1307,14 +1367,14 @@ p {
       color: #140e2d;
     }
     .top {
-      margin: 122px 30px 30px 20px;
+      margin: 122px 30px 20px 20px;
     }
     .bottom {
       margin: 0 30px 0 20px;
     }
   }
   .seven {
-    background: url("../assets/images/bg_6.png") no-repeat;
+    background: url("../assets/images/bg_6.jpg") no-repeat;
     background-size: 100% 100%;
     .name {
       display: table;
@@ -1355,7 +1415,7 @@ p {
   }
 
   .nine {
-    background: url("../assets/images/bg14.png") no-repeat;
+    background: url("../assets/images/bg14.jpg") no-repeat;
     background-size: 100% 100%;
     .safe-content {
       > img:nth-child(2) {
@@ -1368,6 +1428,7 @@ p {
     }
     .bg {
       width: 100%;
+      height: 100%;
       position: absolute;
       bottom: 0;
       left: 0;
@@ -1383,6 +1444,17 @@ p {
 
     .touch {
       width: 165px;
+      height: 47px;
+      background: url("../assets/images/btn2.png") no-repeat;
+      background-size: 100% 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: "Avenir";
+      font-style: normal;
+      font-weight: 400;
+      font-size: 14px;
+      color: #ffffff;
     }
     .word {
       width: 290px;

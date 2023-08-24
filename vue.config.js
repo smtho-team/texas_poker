@@ -36,7 +36,9 @@ module.exports = defineConfig({
     }
   },
   chainWebpack: (config) => {
-    config.resolve.symlinks(true) // 修复热更新失效
+    config.resolve.symlinks(true), // 修复热更新失效
+    config.entry('main').add('babel-polyfill') // main是入口js文件
+  
   },
   css: {
     // extract: false

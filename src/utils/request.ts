@@ -2,7 +2,7 @@ import router from '@/router'
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
 import {inject} from "vue"
 
-const baseURL = 'https://api-sandbox.meeky.app/'
+const baseURL = process.env.VUE_APP_BASEURL
 const message = inject('$message')
 const instance = axios.create({
     timeout: 50000,
@@ -13,7 +13,7 @@ const instance = axios.create({
 instance.interceptors.request.use(
     config => {
         if(config.isVer) {
-            config.baseURL = 'https://webapi.nftscan.com/';
+            config.baseURL = process.env.VUE_APP_NFTSCAN;
         }
         return config
     },

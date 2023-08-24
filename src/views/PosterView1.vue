@@ -1,5 +1,5 @@
 <template>
-  <div class="poster">
+  <div :style="{ opacity: hasOpacity }" class="poster">
     <img class="bg" src="../assets/images/bg29.png" alt="" />
     <img class="bg" src="../assets/images/bg28.png" alt="" />
     <img class="icon" src="../assets/images/may_icon.png" alt="" />
@@ -63,10 +63,10 @@
     <div style="display: none" class="scan">
       Scan the QR code to review your 2022
     </div>
-    <div @click="toCanvas" class="touch1">
-      <img v-if="!loading" src="../assets/images/save1.png" alt="" />
-      <tip v-else></tip>
-      save the poster and win prizes
+    <img v-show="isQq" class="press" src="../assets/images/press.png" alt="" />
+    <div @click="savePic" class="touch1">
+      <img src="../assets/images/save1.png" alt="" />
+      {{ isQq?'Share the poster and win prizes':'Save the poster and win prizes' }}
     </div>
     <img
       style="display: none"
@@ -74,6 +74,7 @@
       src="../assets/images/partner.png"
       alt=""
     />
+    <img class="real_poster" v-if="baseData" alt="" />
   </div>
 </template>
   
@@ -82,18 +83,17 @@ import html2canvas from "html2canvas";
 // import domtoimage from "dom-to-image";
 import { getCurrentInstance } from "vue";
 import { useSwiper } from "swiper/vue";
-import tip from "@/components/TipView.vue"
+import tip from "@/components/TipView.vue";
 
 export default {
   data() {
     return {
       address: null,
-      loading: false
+      imgurl: null,
+      isQq: false,
     };
   },
-  components: {
-    tip
-  },
+  components: {},
   props: [
     "bag",
     "win",
@@ -105,14 +105,18 @@ export default {
     "worth",
     "tx",
     "keyword",
+    "baseData",
+    "hasOpacity",
   ],
   methods: {
     toCanvas() {
-      this.loading = true;
       const instance = getCurrentInstance();
-      // instance?.appContext.config.globalProperties.$amplitude
-      //   .getInstance()
-      //   .logEvent("H5_2022_DOWNLOAD_POSTER_CLICK");
+      console.log(instance,'instance')
+      if(instance) {
+         instance.appContext.config.globalProperties.$amplitude
+        .getInstance()
+        .logEvent("H5_2022_DOWNLOAD_POSTER_CLICK");
+      }
       var shellContainerRef = document.querySelector(".poster");
       // var qrcode = document.getElementsByClassName('qrcode')[0];
       // qrcode.style.display = "block";
@@ -133,30 +137,39 @@ export default {
         onclone: function (clonedDoc) {
           clonedDoc.getElementsByClassName("qrcode")[0].style.display = "block";
           clonedDoc.getElementsByClassName("touch1")[0].style.display = "none";
+          clonedDoc.getElementsByClassName("press")[0].style.display = "none";
           clonedDoc.getElementsByClassName("scan")[0].style.display = "block";
+          clonedDoc.getElementsByClassName("poster")[0].style.opacity = "1";
           clonedDoc.getElementsByClassName("partners")[0].style.display =
             "block";
-          clonedDoc.getElementsByClassName("bg")[0].style.height = "690px";
-          clonedDoc.getElementsByClassName("bg")[1].style.height = "690px";
+          // clonedDoc.getElementsByClassName("bg")[0].style.height = "690px";
+          // clonedDoc.getElementsByClassName("bg")[1].style.height = "690px";
         },
         // width: shellContainerRef.clientWidth, //dom 原始宽度
         // height: shellContainerRef.clientHeight,
         scrollY: 0, // html2canvas默认绘制视图内的页面，需要把scrollY，scrollX设置为0
         scrollX: 0,
-      }).then((canvas) => {
-        // 生成的ba64图片
-        const base64Data = canvas.toDataURL("image/jpeg", 1);
-        // console.log(base64Data, "图片地址");
-        this.savePic(base64Data);
-      });
-      this.$parent.showPaiticipate = true;
-      setTimeout(() => {
-        this.$parent.swipers.value.update();
-        this.$parent.swipers.value.slideNext();
-      }, 0);
+      })
+        .then((canvas) => {
+          // 生成的ba64图片
+          const base64Data = canvas.toDataURL("image/jpeg", 1);
+          console.log("生成图片");
+          this.$parent.loadingImg = false;
+          this.$parent.baseData = base64Data;
+          //进入下一页
+          this.$parent.showPoster = true;
+          setTimeout(() => {
+            this.$parent.swipers.value.update();
+            this.$parent.swipers.value.slideNext();
+          }, 0);
+        })
+        .catch((err) => {
+          console.log("生成失败", err);
+        });
     },
     // 保存图片方法
-    savePic(base64) {
+    savePic() {
+      var base64 = this.baseData;
       var arr = base64.split(",");
       var bytes = atob(arr[1]);
       let ab = new ArrayBuffer(bytes.length);
@@ -164,33 +177,12 @@ export default {
       for (let i = 0; i < bytes.length; i++) {
         ia[i] = bytes.charCodeAt(i);
       }
-      // var array = new Int8Array([17, -45.3]);
-
-      // try {
-      //   var jpeg = new Blob([ab], { type: "image/jpeg" });
-      // } catch (e) {
-      //   // TypeError old chrome and FF
-      //   window.BlobBuilder =
-      //     window.BlobBuilder ||
-      //     window.WebKitBlobBuilder ||
-      //     window.MozBlobBuilder ||
-      //     window.MSBlobBuilder;
-      //   if (e.name == "TypeError" && window.BlobBuilder) {
-      //     var bb = new BlobBuilder();
-      //     bb.append([ab]);
-      //     var jpeg = bb.getBlob("image/jpeg");
-      //   } else if (e.name == "InvalidStateError") {
-      //     // InvalidStateError (tested on FF13 WinXP)
-      //     var jpeg = new Blob([ab], { type: "image/jpeg" });
-      //   } else {
-      //     // We're screwed, blob constructor unsupported entirely
-      //   }
-      // }
       var blob = new Blob([ab], { type: "application/octet-stream" });
       var url = URL.createObjectURL(blob);
       var a = document.createElement("a");
       a.href = url;
       a.download = new Date().valueOf() + ".png";
+      document.body.appendChild(a);
       console.log(a.download, "download");
       var e = document.createEvent("MouseEvents");
       e.initMouseEvent(
@@ -210,16 +202,34 @@ export default {
         0,
         null
       );
-      a.dispatchEvent(e);
-      // a.click();
+      if(!this.isQq) {
+        a.dispatchEvent(e);
+      }
+      this.$parent.showPaiticipate = true;
       setTimeout(() => {
         URL.revokeObjectURL(url);
-        this.loading = false;
+        this.$parent.swipers.value.update();
+        this.$parent.swipers.value.slideNext();
       }, 0);
     },
   },
   mounted() {
     this.address = localStorage.getItem("wallet");
+    if (this.baseData) {
+      document.querySelector(".real_poster").src = this.baseData;
+    }
+    //判断什么类型手机打开的网页
+    let flag = navigator.userAgent.match(
+      /(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i
+    );
+    if (flag == "Android,Android") {
+      //如果是安卓手机打开判断是否是QQ或者微信浏览器打卡，并做出提示，QQ微信浏览器兼容性差
+      var ua = navigator.userAgent.toLowerCase();
+      if (ua.match(/QQ/i) == "qq") {
+        this.isQq = true;
+        console.log("qq浏览器");
+      }
+    }
   },
 };
 </script>
@@ -233,6 +243,18 @@ export default {
     bottom: 50px !important;
   }
 }
+@media only screen and (min-width: 750px) and (max-height: 700px) {
+      .qrcode {
+        left: 17% !important;
+      }
+      .scan {
+        right: 10% !important;
+      }
+
+      /* .icons img {
+        margin-right: 40px !important;
+      } */
+    }
 .poster {
   width: 100%;
   height: 100%;
@@ -292,7 +314,7 @@ export default {
   }
   .text {
     position: absolute;
-    top: 90px;
+    top: 80px;
     left: 50%;
     transform: translateX(-50%);
     width: 338px;
@@ -395,6 +417,9 @@ export default {
       top: 250px;
       left: 20px;
       perspective: 500px;
+      .content {
+        margin-top: -20px;
+      }
       .monkey {
         width: 72px;
         height: 167px;
@@ -565,16 +590,13 @@ export default {
   .qrcode {
     width: 94px;
     height: 95px;
-    background: #1c1c1c;
     position: absolute;
-    bottom: 128px;
+    bottom: 88px;
     left: 44px;
-    padding: 8px 7px 0;
-    box-sizing: border-box;
     border-radius: 10px;
     img {
-      width: 80px;
-      height: 80px;
+      width: 100%;
+      height: 100%;
     }
   }
   .scan {
@@ -586,17 +608,26 @@ export default {
     opacity: 0.8;
     width: 213px;
     position: absolute;
-    bottom: 156px;
-    right: 4%;
+    bottom: 116px;
+    right: 10px;
     text-align: left;
     color: #ffffff;
+  }
+  .press {
+    width: 230px;
+    height: 19px;
+    position: absolute;
+    bottom: 110px;
+    left: 50%;
+    transform: translateX(-50%);
   }
   .touch1 {
     width: 255px;
     height: 46px;
     position: absolute;
     bottom: 60px;
-    left: 60px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 10;
     display: flex;
     justify-content: center;
@@ -607,11 +638,12 @@ export default {
     font-size: 14px;
     text-align: center;
     color: #ffffff;
-    background: url('../assets/images/save2.png') no-repeat;
+    background: url("../assets/images/save2.png") no-repeat;
     background-size: contain;
     img {
       width: 16px;
       height: 16px;
+      margin-right: 10px;
     }
   }
   .partners {
@@ -621,5 +653,13 @@ export default {
     left: 50%;
     margin-left: -158px;
   }
+}
+.real_poster {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
 }
 </style>
